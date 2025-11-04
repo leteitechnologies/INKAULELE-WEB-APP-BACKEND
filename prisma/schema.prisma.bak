@@ -1,0 +1,405 @@
+﻿generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+}
+
+model Destination {
+  id          String           @id @default(uuid())
+  slug        String           @unique
+  title       String
+  subtitle    String?
+  excerpt     String?
+  country     String?
+  region      String?
+  featured    Boolean          @default(false)
+  lat         Float
+  lng         Float
+  coverImage  String
+  tags        String[]
+  inclusions  String[]         @default([])
+  exclusions  String[]         @default([])
+  practicalInfo Json?
+  host        Json?
+  metaTitle   String?
+  metaDescription String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // AGGREGATES (added)
+  rating      Float?           @default(0.0)
+  reviewCount Int               @default(0)
+
+  durations   DurationOption[]
+  gallery     Gallery[]
+  itineraries ItineraryItem[]
+  reviews     Review[]
+  bookings    Booking[]
+
+}
+
+
+
+// Add to your existing schema.prisma
+
+model DurationOption {
+  id            String      @id @default(uuid())
+  destinationId String
+  title         String
+  days          Int?
+  maxNights     Int?
+  minGuests     Int?
+  maxGuests     Int?
+  priceFrom     Float?
+  priceModel    String?      // "per_person" | "per_room" | "per_booking" (optional)
+  inventory     Int?         // total units (rooms/groups) available for this package; null = unlimited
+  maxRooms      Int?
+  maxInfants    Int?
+  currency      String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  bookings      Booking[]
+  @@index([destinationId])
+}
+
+enum BookingStatus {
+  HOLD     // temporary hold
+  CONFIRMED
+  CANCELLED
+  EXPIRED  // optional explicit expired state
+}
+
+// schema.prisma (patch snippet)
+
+model Booking {
+  id               String      @id @default(uuid())
+  reference        String?     @unique
+  destinationId    String
+  durationOptionId String?
+  fromDate         DateTime
+  toDate           DateTime
+  nights           Int
+  adults           Int
+  children         Int
+  infants          Int
+  rooms            Int
+  unitsBooked      Int
+  totalPrice       Float?
+  currency         String?
+  status           BookingStatus @default(HOLD)
+  holdTokenHash    String?
+  holdExpiresAt    DateTime?
+  stripePaymentIntentId String?
+  stripePaymentIntentStatus String?
+  travelerName      String?
+  travelerEmail     String?
+  travelerPhone     String?
+  meetingPoint      Json?
+  supplierPhone     String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  autoGenerateVoucher Boolean?  @default(true)   // optional per-booking override (null => follow env)
+  voucherGenerationRequestedAt DateTime?  
+accommodationSupplierId String? // supplier providing accommodation
+roomId String? // Room assigned
+checkInAt DateTime?
+checkOutAt DateTime?
+flightNumber String?
+specialRequests String?
+pickupRequested Boolean @default(false)
+
+  stripeCheckoutSessionId String?
+
+  // Relations
+    travelPack TravelPack?
+  supplierVouchers SupplierVoucher[]
+  destination Destination @relation(fields: [destinationId], references: [id])
+  durationOption DurationOption? @relation(fields: [durationOptionId], references: [id])
+
+room Room? @relation(fields: [roomId], references: [id])
+accommodationSupplier Supplier? @relation("SupplierToBooking", fields: [accommodationSupplierId], references: [id])
+  // New 1:1 relations to child models
+  receipt Receipt?
+  voucher Voucher?
+  pickup Pickup?
+
+  @@index([destinationId])
+  @@index([durationOptionId])
+  @@index([status])
+  @@index([holdExpiresAt])
+}
+
+// new models to add to schema.prisma
+
+model TravelPack {
+  id         String   @id @default(uuid())
+  bookingId  String   @unique
+  publicId   String   // cloudinary/s3 public id
+  filename   String?
+  uploadedAt DateTime @default(now())
+  emailedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([publicId])
+}
+
+model SupplierVoucher {
+  id           String   @id @default(uuid())
+  bookingId    String
+  supplierId   String
+  supplierName String?
+  supplierType String?   // "hotel" | "transfer" | "guide" | "activity"
+  supplierRef  String?   // supplier-side reference / supplier id
+  publicId     String   @unique   // cloudinary/s3 public id
+  filename     String?
+  uploadedAt   DateTime  @default(now())
+  emailedAt    DateTime?
+  contactJson  Json?     // { phone, email, address } for quick supplier access
+  createdAt    DateTime  @default(now())
+
+  booking      Booking   @relation(fields: [bookingId], references: [id])
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+
+  @@index([bookingId])
+  @@index([publicId])
+  @@index([supplierId])
+}
+
+// new model: Receipt (one-to-one with booking)
+model Receipt {
+  id           String   @id @default(uuid())
+  bookingId    String   @unique
+  publicId     String   // cloudinary public id (raw/private)
+  filename     String?
+  uploadedAt   DateTime @default(now())
+  emailedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  booking      Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([publicId])
+}
+
+
+// new model: Voucher (one-to-one with booking)
+model Voucher {
+  id           String   @id @default(uuid())
+  bookingId    String   @unique
+  publicId     String   // cloudinary public id (raw/private)
+  filename     String?
+  uploadedAt   DateTime @default(now())
+  emailedAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  booking      Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([publicId])
+}
+
+
+model ItineraryItem {
+  id                  String      @id @default(uuid())
+  destinationId       String
+  day                 Int?
+  time                String?
+  title               String
+  description         String?
+  durationMinutes     Int?
+  applicableDurations String[]    @default([])
+  mealIncluded        Boolean     @default(false)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  destination         Destination @relation(fields: [destinationId], references: [id])
+
+  @@index([destinationId])
+}
+// --- Supplier: generic partner table for hotels, transfer companies, guides etc.
+model Supplier {
+id String @id @default(uuid())
+name String
+type SupplierType @default(OTHER)
+phone String?
+email String?
+website String?
+address String?
+lat Float?
+lng Float?
+notes String?
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+
+// relations
+rooms Room[]
+vouchers SupplierVoucher[]
+accommodationBookings Booking[] @relation("SupplierToBooking")
+}
+
+
+// --- Room: hotel room inventory
+model Room {
+id String @id @default(uuid())
+supplierId String
+code String? // hotel room code / SKU
+title String
+roomType String? // e.g. Twin, Double, Suite
+capacity Int @default(2)
+inventory Int? // how many rooms of this type
+priceFrom Float?
+currency String? @default("KES")
+amenities String[] @default([])
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+
+supplier Supplier @relation(fields: [supplierId], references: [id])
+bookings Booking[]
+@@index([supplierId])
+}
+
+
+// --- Pickup / Transfer details (one per booking)
+model Pickup {
+  id             String       @id @default(uuid())
+  bookingId      String       @unique
+  type           PickupType
+  provider       PickupProvider
+  vehicleType    VehicleType?
+  providerName   String?      // e.g. "Lamu Transfers Ltd" or "Uber"
+  contactPhone   String?
+  contactEmail   String?
+  pickupAt       DateTime?    // scheduled pickup time (local)
+  flightNumber   String?
+  airline        String?
+  terminal       String?
+  pickupAddress  String?
+  pickupLat      Float?
+  pickupLng      Float?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  booking        Booking      @relation(fields: [bookingId], references: [id])
+}
+
+
+
+model Gallery {
+  id            String      @id @default(uuid())
+  destinationId String
+  imageUrl      String
+  order         Int
+  destination   Destination @relation(fields: [destinationId], references: [id])
+}
+model Subscriber {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  name           String?
+  status         SubscriberStatus @default(PENDING)
+  verified       Boolean          @default(false)
+  verifyToken    String?          @unique
+  unsubToken     String?          @unique
+  source         String?          // e.g. "site:cta-home"
+  createdAt      DateTime         @default(now())
+  verifiedAt     DateTime?
+  unsubscribedAt DateTime?
+  lastSentAt     DateTime?
+  notes          String?
+}
+
+enum SubscriberStatus {
+  PENDING
+  SUBSCRIBED
+  UNSUBSCRIBED
+  BOUNCED
+}
+model Review {
+  id              String      @id @default(uuid())
+  destinationId   String
+  author          String
+  avatar          String?     // optional avatar url (or generated)
+  email           String?     // optional (for verification / deletion link)
+  rating          Float
+  text            String
+  status          ReviewStatus @default(PENDING) // PENDING | APPROVED | REJECTED
+  deleteTokenHash String?     // sha256 hash of deletion token
+  ipHash          String?     // hashed client IP (privacy)
+  userAgent       String?     // optional user agent for audit
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  reportedCount   Int         @default(0)
+  destination     Destination @relation(fields: [destinationId], references: [id])
+
+  @@index([destinationId])
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  USER
+}
+// --- enums
+enum SupplierType {
+HOTEL
+TRANSFER
+GUIDE
+ACTIVITY
+RESTAURANT
+OTHER
+}
+
+
+enum PickupType {
+AIRPORT
+PORT
+HOTEL
+MEETING_POINT
+}
+
+
+enum PickupProvider {
+COMPANY // company vehicle provided by operator
+THIRD_PARTY // local taxi/transfer supplier
+UBER
+WALK
+SHUTTLE
+}
+
+
+enum VehicleType {
+CAR
+VAN
+MINIBUS
+FOUR_X_FOUR
+MOTORBIKE
+}

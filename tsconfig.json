@@ -1,0 +1,25 @@
+﻿{
+  "compilerOptions": {
+    "module": "Node16",
+    "declaration": false,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2020",
+    "sourceMap": true,
+    "outDir": "dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+        "types": ["node"],
+    "resolveJsonModule": true,
+ "typeRoots": ["../../node_modules/@types", "./src/types"],
+    "baseUrl": "./src",
+    "paths": {
+      "@app/*": ["*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "test"]
+}

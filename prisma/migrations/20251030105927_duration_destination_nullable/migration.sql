@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "DurationOption" ALTER COLUMN "destinationId" DROP NOT NULL,
+ALTER COLUMN "updatedAt" SET DEFAULT CURRENT_TIMESTAMP;
