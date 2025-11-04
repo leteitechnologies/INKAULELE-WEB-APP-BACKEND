@@ -4,8 +4,7 @@
     "module": "Node16",
     "moduleResolution": "node16",
     "outDir": "./dist",
-    "types": ["node"],
-    "skipLibCheck": true
+       "skipLibCheck": true, 
   },
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
