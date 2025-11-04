@@ -3,7 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import * as crypto from 'crypto';
 import { CheckAvailabilityDto } from './dtos/check-availability.dto';
 import { ClientPriceModel, fromPrismaPriceModel } from '@app/utils/price-model';
-
+import { Prisma } from '@prisma/client';
 const HOLD_TTL_SECONDS = Number(process.env.AVAILABILITY_HOLD_TTL_SECONDS || 15 * 60);
 const DEFAULT_PRICE_MODEL = 'per_person';
 
@@ -225,7 +225,7 @@ if (experienceId) {
 
     // If we get here, all nights are available. Optionally create hold inside a transaction (serialize via FOR UPDATE)
     try {
-      const result = await this.prisma.$transaction(async (tx) => {
+  const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // lock the resource row - choose experience or destination
         if (experienceId) {
           await tx.$executeRaw`SELECT id FROM "Experience" WHERE id = ${experienceId} FOR UPDATE`;
@@ -378,7 +378,7 @@ if (experienceId) {
     }
 
     try {
-      const confirmed = await this.prisma.$transaction(async (tx) => {
+   const confirmed = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         await tx.$executeRaw`SELECT id FROM "Destination" WHERE id = ${booking.destinationId} FOR UPDATE`;
 
         return tx.booking.update({

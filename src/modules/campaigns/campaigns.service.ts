@@ -7,9 +7,17 @@ import pLimit from 'p-limit';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '../mailer/mailer.service';
 import { extractFirstNameFromEmail } from '@app/lib/nameFromEmail';
-import type { CampaignRecipient, Subscriber, Destination } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
+import type { Destination, DurationOption } from '@prisma/client';
 
-type RecipientWithSubscriber = CampaignRecipient & { subscriber?: Subscriber | null };
+
+type RecipientWithSubscriber = Prisma.CampaignRecipientGetPayload<{ include: { subscriber: true } }>;
+
+type CampaignDestRow = Prisma.CampaignDestinationGetPayload<{
+  include: {
+    destination: { include: { durations: true } }
+  }
+}>;
 
 @Injectable()
 export class CampaignsService implements OnModuleDestroy {
@@ -193,24 +201,23 @@ export class CampaignsService implements OnModuleDestroy {
     let picks: Array<Record<string, any>> = [];
 
     if (campaignDestRows && campaignDestRows.length) {
-      picks = campaignDestRows.map((row) => {
-        // destination has shape from Prisma; we typed Destination import above for safety
-        const p = row.destination as Destination & { durations?: any[] };
-        const dur = p.durations && p.durations.length ? p.durations[0] : null;
-        return {
-          title: p.title,
-          subtitle: p.subtitle ?? '',
-          coverImage: p.coverImage ?? (this.config.get('SITE_ICON') ?? ''),
-          url: `${this.config.get('SITE_URL') ?? 'https://your-site.example.com'}/destinations/${p.slug}`,
-          priceFrom:
-            typeof dur?.priceFrom !== 'undefined' && dur?.priceFrom !== null
-              ? String(Math.round(Number(dur.priceFrom)))
-              : '',
-          currency: dur?.currency ?? 'KSh',
-          emoji: '🌍',
-          duration: dur?.durationLabel ?? undefined,
-        };
-      });
+      picks = campaignDestRows.map((row: CampaignDestRow) => {
+    const p = row.destination as Destination & { durations?: DurationOption[] };
+    const dur = p.durations && p.durations.length ? p.durations[0] : null;
+    return {
+      title: p.title,
+      subtitle: p.subtitle ?? '',
+      coverImage: p.coverImage ?? (this.config.get('SITE_ICON') ?? ''),
+      url: `${this.config.get('SITE_URL') ?? 'https://your-site.example.com'}/destinations/${p.slug}`,
+      priceFrom:
+        typeof dur?.priceFrom !== 'undefined' && dur?.priceFrom !== null
+          ? String(Math.round(Number(dur.priceFrom)))
+          : '',
+      currency: dur?.currency ?? 'KSh',
+      emoji: '🌍',
+      duration: dur?.durationLabel ?? undefined,
+    };
+  });
     } else {
       const picksRaw = await this.prisma.destination.findMany({
         where: { featured: true },
@@ -218,22 +225,23 @@ export class CampaignsService implements OnModuleDestroy {
         take: 6,
         include: { durations: { take: 1, orderBy: { priceFrom: 'asc' } } },
       });
-      picks = picksRaw.map((p) => {
-        const dur = p.durations && p.durations.length ? p.durations[0] : null;
-        return {
-          title: p.title,
-          subtitle: p.subtitle ?? '',
-          coverImage: p.coverImage ?? (this.config.get('SITE_ICON') ?? ''),
-          url: `${this.config.get('SITE_URL') ?? 'https://your-site.example.com'}/destinations/${p.slug}`,
-          priceFrom:
-            typeof dur?.priceFrom !== 'undefined' && dur?.priceFrom !== null
-              ? String(Math.round(Number(dur.priceFrom)))
-              : '',
-          currency: dur?.currency ?? 'KSh',
-          emoji: '🌍',
-          duration: dur?.durationLabel ?? undefined,
-        };
-      });
+  picks = picksRaw.map((p: Destination & { durations?: DurationOption[] }) => {
+  const dur = p.durations && p.durations.length ? p.durations[0] : null;
+  return {
+    title: p.title,
+    subtitle: p.subtitle ?? '',
+    coverImage: p.coverImage ?? (this.config.get('SITE_ICON') ?? ''),
+    url: `${this.config.get('SITE_URL') ?? 'https://your-site.example.com'}/destinations/${p.slug}`,
+    priceFrom:
+      typeof dur?.priceFrom !== 'undefined' && dur?.priceFrom !== null
+        ? String(Math.round(Number(dur.priceFrom)))
+        : '',
+    currency: dur?.currency ?? 'KSh',
+    emoji: '🌍',
+    duration: dur?.durationLabel ?? undefined,
+  };
+});
+
     }
 
     // 3. compile Handlebars template once

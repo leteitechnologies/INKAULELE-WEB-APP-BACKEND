@@ -2,12 +2,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import type { AboutPayload } from './types';
-
+import type { Value, TeamMember, Stat, TimelineItem, FAQ } from '@prisma/client';
 @Injectable()
 export class AboutService {
   constructor(private prisma: PrismaService) {}
 
-  async getAbout() {
+ async getAbout() {
     const about = await this.prisma.aboutPage.findUnique({
       where: { slug: 'about' },
       include: {
@@ -29,13 +29,43 @@ export class AboutService {
       heroImage: about.heroImage,
       missionTitle: about.missionTitle,
       missionParagraphs: about.missionParagraphs ?? [],
-      values: about.values.map(v => ({ id: v.id, title: v.title, desc: v.desc, order: v.order, icon: v.icon })),
-      team: about.team.map(t => ({ id: t.id, name: t.name, role: t.role, bio: t.bio, photo: t.photo, social: t.social, order: t.order })),
-      stats: about.stats.map(s => ({ id: s.id, label: s.label, value: s.value, order: s.order })),
-      timeline: about.timeline.map(t => ({ id: t.id, year: t.year, text: t.text, order: t.order })),
-      faqs: about.faqs.map(f => ({ id: f.id, q: f.q, a: f.a, order: f.order })),
+      values: (about.values ?? []).map((v: Value) => ({
+        id: v.id,
+        title: v.title,
+        desc: v.desc,
+        order: v.order,
+        icon: v.icon,
+      })),
+      team: (about.team ?? []).map((t: TeamMember) => ({
+        id: t.id,
+        name: t.name,
+        role: t.role,
+        bio: t.bio,
+        photo: t.photo,
+        social: t.social,
+        order: t.order,
+      })),
+      stats: (about.stats ?? []).map((s: Stat) => ({
+        id: s.id,
+        label: s.label,
+        value: s.value,
+        order: s.order,
+      })),
+      timeline: (about.timeline ?? []).map((ti: TimelineItem) => ({
+        id: ti.id,
+        year: ti.year,
+        text: ti.text,
+        order: ti.order,
+      })),
+      faqs: (about.faqs ?? []).map((f: FAQ) => ({
+        id: f.id,
+        q: f.q,
+        a: f.a,
+        order: f.order,
+      })),
     } as AboutPayload;
   }
+
 async updateAbout(payload: AboutPayload) {
   const {
     heroEyebrow = null,

@@ -13,6 +13,7 @@
     "strict": true,
     "moduleResolution": "node16",
     "esModuleInterop": true,
+     "noEmit": false,
         "types": ["node"],
     "resolveJsonModule": true,
  "typeRoots": ["../../node_modules/@types", "./src/types"],

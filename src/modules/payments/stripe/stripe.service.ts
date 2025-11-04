@@ -17,12 +17,11 @@ export default class StripeService {
       throw new Error('Missing STRIPE_SECRET_KEY in environment');
     }
 
-    this.stripe = new Stripe(secretKey, {
-      apiVersion: '2025-09-30.clover',
-      timeout: this.STRIPE_TIMEOUT,
-      // built-in SDK retries for some transient errors (complements our explicit retries)
-      maxNetworkRetries: 2,
-    });
+this.stripe = new Stripe(secretKey, {
+  // removed apiVersion to avoid literal-type mismatch with typings
+  timeout: this.STRIPE_TIMEOUT,
+  maxNetworkRetries: 2,
+});
   }
 
   // --- generic retry helper with exponential backoff ---

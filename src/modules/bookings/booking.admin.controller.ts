@@ -2,7 +2,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { VoucherService } from '../voucher/voucher.service';
-
+ import { Prisma, Booking } from '@prisma/client';
 @Controller('admin/bookings')
 export class AdminBookingController {
   constructor(
@@ -55,19 +55,19 @@ export class AdminBookingController {
     });
 
     // format payload for the admin UI and wrap
-    const payload = bookings.map(b => ({
-      id: b.id,
-      reference: b.reference,
-      travelerName: b.travelerName,
-      travelerEmail: b.travelerEmail,
-      destination: b.destination?.title ?? b.experience?.title,
-      region: b.destination?.region ?? b.experience?.region,
-      country: b.destination?.country ?? null,
-      status: b.status,
-      totalPrice: b.totalPrice,
-      currency: b.currency,
-      createdAt: b.createdAt,
-    }));
+const payload = bookings.map(b => ({
+  id: b.id,
+  reference: b.reference,
+  travelerName: b.travelerName,
+  travelerEmail: b.travelerEmail,
+  destination: b.destination?.title ?? b.experience?.title,
+  region: b.destination?.region ?? b.experience?.region,
+  country: b.destination?.country ?? null,
+  status: b.status,
+  totalPrice: b.totalPrice,
+  currency: b.currency,
+  createdAt: b.createdAt,
+}));
 
     return { data: payload, meta: { count: payload.length } };
   }

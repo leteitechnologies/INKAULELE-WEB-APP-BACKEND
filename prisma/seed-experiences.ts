@@ -1,5 +1,6 @@
 // prisma/seed-experiences.ts
-import { PrismaClient, PackageType } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
+
 
 const prisma = new PrismaClient();
 
@@ -41,7 +42,7 @@ const experiences = [
     },
     priceFrom: 45.0,
     duration: "4 hours",
-    packageType: PackageType.DAY,
+packageType: 'DAY',
     maxPackageDays: 1,
     maxGuests: 12,
     maxRooms: 0,
@@ -85,7 +86,7 @@ const experiences = [
     host: { name: "Chef Ken", phone: "+254712345678", about: "Local chef & foodie guide" },
     priceFrom: 30.0,
     duration: "3 hours",
-    packageType: PackageType.MULTI_DAY,
+packageType: 'MULTI_DAY',
     maxPackageDays: 1,
     maxGuests: 8,
     gallery: ["https://images.unsplash.com/photo-1533777324565-a040eb52fac2?w=800&q=60"],

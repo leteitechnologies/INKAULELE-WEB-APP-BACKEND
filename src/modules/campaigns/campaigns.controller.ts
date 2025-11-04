@@ -5,6 +5,7 @@ import { MailerService } from '../mailer/mailer.service';
 import { extractFirstNameFromEmail } from '@app/lib/nameFromEmail';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { Destination, DurationOption } from '@prisma/client';
 
 // import AdminGuard if you have one
 // import { AdminGuard } from '../auth/admin.guard';
@@ -60,19 +61,20 @@ async preview(@Body() body: { html: string; sample: any }) {
         include: { durations: { take: 1, orderBy: { priceFrom: 'asc' } } },
       });
 
-      sample.picks = rows.map((p) => {
-        const dur = p.durations && p.durations.length ? p.durations[0] : null;
-        return {
-          title: p.title,
-          subtitle: p.subtitle ?? '',
-          coverImage: p.coverImage ?? this.config.get('SITE_ICON') ?? '',
-          url: `${this.config.get('SITE_URL') ?? ''}/destinations/${p.slug}`,
-          priceFrom: dur?.priceFrom ?? '',
-          currency: dur?.currency ?? 'KSh',
-          emoji: '🌍',
-          duration: dur?.durationLabel ?? undefined,
-        };
-      });
+sample.picks = rows.map((p: Destination & { durations?: DurationOption[] }) => {
+  const dur = p.durations && p.durations.length ? p.durations[0] : null;
+  return {
+    title: p.title,
+    subtitle: p.subtitle ?? '',
+    coverImage: p.coverImage ?? this.config.get('SITE_ICON') ?? '',
+    url: `${this.config.get('SITE_URL') ?? ''}/destinations/${p.slug}`,
+    priceFrom: dur?.priceFrom ?? '',
+    currency: dur?.currency ?? 'KSh',
+    emoji: '🌍',
+    duration: dur?.durationLabel ?? undefined,
+  };
+});
+
     } else {
       // optional: fallback small set of featured picks so preview never looks empty
       const picksRaw = await this.prisma.destination.findMany({
