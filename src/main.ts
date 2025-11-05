@@ -30,11 +30,15 @@ app.use(cookieParser());
   // read a comma-separated list of allowed origins from env
 const raw =
   process.env.FRONTEND_ORIGIN ||
-  "http://localhost:3001,http://localhost:3002,http://192.168.8.12:3001,http://192.168.8.12:3002, https://eda8be0d3324.ngrok-free.app";
+  "http://localhost:3001,http://localhost:3002,http://192.168.8.12:3001,http://192.168.8.12:3002,https://eda8be0d3324.ngrok-free.app,https://inkaulele.vercel.app,https://inkaulele-887fo627q-leteis-projects.vercel.app,https://www.inkaulelesidan.com";
 
 
   const allowed = raw.split(",").map(s => s.trim()).filter(Boolean);
   
+  const wildcardAllowed = [
+  /\.vercel\.app$/,
+  /\.ngrok-free\.app$/,
+];
 app.enableCors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // allow non-browser (server-to-server) requests without origin (curl, Postman)
