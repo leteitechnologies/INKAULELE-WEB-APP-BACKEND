@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: inkaulele-backend
+    env: node
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_QwYic6sZUnB8@ep-jolly-hill-adr91gc8-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: NODE_ENV
+        value: production
