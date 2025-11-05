@@ -60,16 +60,20 @@ private readonly VOUCHER_EMAILS_ENABLED: boolean;
     });
   }
 
-  async sendMail(options: nodemailer.SendMailOptions): Promise<SentMessageInfo> {
-    try {
-      const info = await this.transporter.sendMail(options);
-      this.logger.log(`📧 Email sent to ${options.to}, messageId=${info.messageId}`);
-      return info;
-    } catch (err) {
-      this.logger.error('❌ Failed to send email', err);
-      throw new InternalServerErrorException('Failed to send email');
-    }
+async sendMail(options: nodemailer.SendMailOptions): Promise<SentMessageInfo | null> {
+  try {
+    const info = await this.transporter.sendMail(options);
+    this.logger.log(`📧 Email sent to ${options.to}, messageId=${info.messageId}`);
+    return info;
+  } catch (err) {
+    // log full error (nodemailer provides good diagnostic info)
+    this.logger.error('❌ Failed to send email (sendMail)', err as any);
+
+    // Return null so callers can continue and optionally record the failure
+    return null;
   }
+}
+
 
   /**
    * Build HTML email layout.
