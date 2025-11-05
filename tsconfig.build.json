@@ -3,12 +3,10 @@
   "compilerOptions": {
     "module": "Node16",
     "moduleResolution": "node16",
-  "outDir": "./dist",
-    "rootDir": "./src",
+    "outDir": "./dist",
     "skipLibCheck": true,
     "types": ["node"],
     "typeRoots": ["./node_modules/@types", "../../node_modules/@types", "./src/types"]
   },
-    "include": ["src/**/*"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }

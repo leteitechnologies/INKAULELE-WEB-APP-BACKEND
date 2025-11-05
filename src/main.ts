@@ -1,4 +1,5 @@
 ﻿// main.ts
+import 'tsconfig-paths/register';
 import dns from 'dns';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
