@@ -70,6 +70,7 @@
 // bootstrap();
 // main.ts (serverless-friendly for Vercel)
 // NOTE: keep top-level imports and dotenv early
+import 'tsconfig-paths/register';
 import 'reflect-metadata';
 import dns from 'dns';
 import express, { Request, Response } from 'express';

@@ -2,8 +2,10 @@
 import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { mapDestinationForClient } from './mappers';
-import { toPrismaPriceModel } from '@app/utils/price-model';
+
 import { Prisma } from '@prisma/client';
+import { toPrismaPriceModel } from "../../utils/price-model";
+
 
 const MAX_GALLERY_ITEMS = 50; // production-safe cap (tweak if needed)
 

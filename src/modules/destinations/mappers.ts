@@ -1,6 +1,7 @@
 // src/modules/destinations/mappers.ts
 
-import { fromPrismaPriceModel } from "@app/utils/price-model";
+import { fromPrismaPriceModel } from "../../utils/price-model";
+
 
 
 export function mapDurationForClient(d: any) {
