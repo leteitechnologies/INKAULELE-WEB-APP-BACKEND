@@ -25,6 +25,8 @@ import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { GalleryModule } from './modules/gallery/gallery.module';
 import { AdminSearchModule } from './modules/admin-search/admin-search.module';
 import { BookingInquiryModule } from './modules/booking-inquiry/booking.inquiry.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -62,5 +64,7 @@ SocialsModule,
     MailerModule,
     NewsletterModule,
   ],
+    controllers: [AppController],
+      providers: [AppService],
 })
 export class AppModule {}
