@@ -4,7 +4,9 @@
     "module": "Node16",
     "moduleResolution": "node16",
     "outDir": "./dist",
-       "skipLibCheck": true, 
+    "skipLibCheck": true,
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types", "./src/types"]
   },
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
