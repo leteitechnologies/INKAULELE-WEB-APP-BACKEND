@@ -73,4 +73,30 @@ export class AdminInquiryBookingController {
     await this.bookingService.markHostNotified(id);
     return { ok: true };
   }
+  // src/modules/booking/admin.controller.ts (inside AdminInquiryBookingController)
+  // GET /admin/booking-enquiries/latest
+  @Get('latest')
+  async latest(
+    @Query('limit') limit?: string,
+    @Query('days') days?: string,
+    @Query('unnotified') unnotified?: string,
+  ) {
+    // parse safe numbers
+    const parsedLimit = typeof limit === 'string' && limit.trim() !== '' ? Math.max(1, Math.trunc(Number(limit) || 0)) : undefined;
+    const parsedDays = typeof days === 'string' && days.trim() !== '' ? Math.max(1, Math.trunc(Number(days) || 0)) : undefined;
+    let parsedUnnotified: boolean | undefined = undefined;
+    if (unnotified === 'true') parsedUnnotified = true;
+    else if (unnotified === 'false') parsedUnnotified = false;
+
+    this.logger.debug('Admin: /latest called', { limit: parsedLimit, days: parsedDays, unnotified: parsedUnnotified });
+
+    const rows = await this.bookingService.listLatestBookingEnquiries({
+      limit: parsedLimit,
+      days: parsedDays,
+      unnotified: parsedUnnotified,
+    });
+
+    return { data: rows };
+  }
+
 }
