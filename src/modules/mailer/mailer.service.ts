@@ -1,8 +1,7 @@
 // src/mailer/mailer.service.ts
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import type { SentMessageInfo } from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
 export interface ChangeDetail { field: string; from: string; to: string; at: Date; }
 type CTA = { label: string; url: string };
@@ -10,7 +9,6 @@ type Social = { label: string; url: string; icon: string };
 
 @Injectable()
 export class MailerService {
-  private readonly transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailerService.name);
 
   // brand tokens
@@ -31,48 +29,71 @@ export class MailerService {
   private readonly ADMIN_EMAIL: string;
 private readonly VOUCHER_EMAILS_ENABLED: boolean;
   constructor(private readonly config: ConfigService) {
+     const sendgridKey = this.config.get<string>('SENDGRID_API_KEY');
+    if (!sendgridKey) {
+      this.logger.error('❌ SENDGRID_API_KEY not set. Email sending will fail until configured.');
+    } else {
+      sgMail.setApiKey(sendgridKey);
+      this.logger.log('✅ SendGrid configured (API key present)');
+    }
     this.SITE_TITLE = this.config.get('SITE_TITLE', 'inkaulele sidan');
     this.SITE_DESCRIPTION = this.config.get('SITE_DESCRIPTION', 'Luxury safaris & cultural tours in Kenya');
     this.SITE_ICON = this.config.get('SITE_ICON', 'https://res.cloudinary.com/dahrcnjfh/image/upload/v1759849979/inkaulele-transparent-logo.png');
-    this.ADMIN_EMAIL = this.config.get('ADMIN_EMAIL', this.config.get('EMAIL_USER') || '');
+this.ADMIN_EMAIL = this.config.get('ADMIN_EMAIL', this.config.get('SENDGRID_FROM') || this.config.get('EMAIL_USER') || '');
   this.VOUCHER_EMAILS_ENABLED = String(this.config.get('VOUCHER_EMAILS_ENABLED', 'false')).toLowerCase() === 'true';
-    this.transporter = nodemailer.createTransport({
-      host: this.config.get('EMAIL_HOST', 'smtp.gmail.com'),
-      port: Number(this.config.get('EMAIL_PORT', 465)),
-      secure: true,
-      auth: {
-        user: this.config.get<string>('EMAIL_USER'),
-        pass: this.config.get<string>('EMAIL_PASS'),
-      },
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      connectionTimeout: 30_000,
-      greetingTimeout: 30_000,
-      socketTimeout: 60_000,
-      logger: true,
-      debug: true,
-    });
 
-    this.transporter.verify((err) => {
-      if (err) this.logger.error('❌ SMTP connection failed:', err);
-      else this.logger.log('✅ SMTP connection successful');
-    });
+
+ 
   }
 
-async sendMail(options: nodemailer.SendMailOptions): Promise<SentMessageInfo | null> {
-  try {
-    const info = await this.transporter.sendMail(options);
-    this.logger.log(`📧 Email sent to ${options.to}, messageId=${info.messageId}`);
-    return info;
-  } catch (err) {
-    // log full error (nodemailer provides good diagnostic info)
-    this.logger.error('❌ Failed to send email (sendMail)', err as any);
+// replace async sendMail(...) { ... } with:
 
-    // Return null so callers can continue and optionally record the failure
+async sendMail(options: {
+  to: string | string[];
+  from?: string;
+  subject: string;
+  html?: string;
+  text?: string;
+  attachments?: Array<{ filename: string; content: Buffer | string; contentType?: string }>;
+  bcc?: string | string[]; // ✅ add this
+}): Promise<{ ok: boolean } | null> {
+  try {
+    // Build base message
+    const msg: any = {
+      to: options.to,
+      from: options.from ?? this._from(),
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    };
+
+    if (options.bcc) msg.bcc = options.bcc; // ✅ include BCC if provided
+
+    if (options.attachments && options.attachments.length) {
+      msg.attachments = options.attachments.map(att => {
+        const content = Buffer.isBuffer(att.content)
+          ? att.content.toString('base64')
+          : Buffer.from(String(att.content)).toString('base64');
+
+        return {
+          content,
+          filename: att.filename,
+          type: att.contentType ?? undefined,
+          disposition: 'attachment',
+        };
+      });
+    }
+
+    await sgMail.send(msg);
+    this.logger.log(`📧 Email sent to ${Array.isArray(options.to) ? options.to.join(',') : options.to}`);
+    return { ok: true };
+  } catch (err: any) {
+    this.logger.error('❌ Failed to send email (SendGrid)', err?.response?.body ?? err);
     return null;
   }
 }
+
+
 
 
   /**

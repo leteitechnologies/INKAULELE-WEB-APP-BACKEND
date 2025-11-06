@@ -201,26 +201,32 @@ const durationOptionText = (() => {
 
 
     // --- 2) create DB record with relation ids resolved above ---
-    const createData: any = {
-      hostId: resolvedHostId ?? null,
-      destinationId: dto.destinationId ?? null,
-      experienceId: dto.experienceId ?? null,
-      durationOptionId: dto.durationOptionId ?? null,
-      durationTitle: resolvedDurationTitle ?? dto.durationTitle ?? null,
-      startDate: dto.startDate ? new Date(dto.startDate) : null,
-      endDate: dto.endDate ? new Date(dto.endDate) : null,
-      nights: dto.nights ?? null,
-      guests: dto.guests ? dto.guests : null,
-      rooms: dto.rooms ?? null,
-      message: dto.message ?? '',
-      name: dto.name ?? null,
-      email: dto.email ?? null,
-      phone: dto.phone ?? null,
-      currency: dto.currency ?? null,
-      priceEstimate: dto.priceEstimate ?? null,
-      meta: dto.meta ?? null,
-      hostEmailUsed: resolvedHostEmail ?? null,
-    };
+// --- 2) create DB record with relation ids resolved above ---
+const createData: any = {
+  hostId: resolvedHostId ?? null,
+  destinationId: dto.destinationId ?? null,
+  experienceId: dto.experienceId ?? null,
+  durationOptionId: dto.durationOptionId ?? null,
+
+  // <-- ensure these resolved titles are persisted:
+  destinationTitle: resolvedDestinationTitle ?? dto.destinationTitle ?? null,
+  experienceTitle: resolvedExperienceTitle ?? dto.experienceTitle ?? null,
+  durationTitle: resolvedDurationTitle ?? dto.durationTitle ?? null,
+
+  startDate: dto.startDate ? new Date(dto.startDate) : null,
+  endDate: dto.endDate ? new Date(dto.endDate) : null,
+  nights: dto.nights ?? null,
+  guests: dto.guests ? dto.guests : null,
+  rooms: dto.rooms ?? null,
+  message: dto.message ?? '',
+  name: dto.name ?? null,
+  email: dto.email ?? null,
+  phone: dto.phone ?? null,
+  currency: dto.currency ?? null,
+  priceEstimate: dto.priceEstimate ?? null,
+  meta: dto.meta ?? null,
+  hostEmailUsed: resolvedHostEmail ?? null,
+};
 
     const record = await this.prisma.bookingEnquiry.create({ data: createData });
     this.logger.log(`BookingEnquiry saved ${record.id}`);
@@ -469,5 +475,32 @@ const hostBody = `
       where: { id },
       data: { hostNotified: true },
     });
+  }
+    /**
+   * Return booking enquiries created within the last `days` days.
+   * Defaults to last 7 days. Optional limit (capped at 1000).
+   */
+  async listLatestBookingEnquiries(options?: { limit?: number; days?: number; unnotified?: boolean }) {
+    const days = typeof options?.days === 'number' && options.days > 0 ? options.days : 7;
+    const take = Math.min(options?.limit ?? 200, 1000);
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const where: any = {
+      createdAt: { gte: since },
+    };
+
+    if (typeof options?.unnotified === 'boolean' && options?.unnotified) {
+      where.adminNotified = false;
+    }
+
+    this.logger.debug('Admin: listing latest booking enquiries', { days, limit: take, unnotified: options?.unnotified });
+
+    const rows = await this.prisma.bookingEnquiry.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+
+    return rows;
   }
 }

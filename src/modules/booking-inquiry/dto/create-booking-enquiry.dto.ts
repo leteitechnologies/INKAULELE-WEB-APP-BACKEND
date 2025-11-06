@@ -26,7 +26,8 @@ export class CreateBookingEnquiryDto {
   // new: optional relation ids (were missing)
   @IsOptional() @IsString() destinationId?: string;
   @IsOptional() @IsString() experienceId?: string;
-
+  @IsOptional() @IsString() destinationTitle?: string;
+  @IsOptional() @IsString() experienceTitle?: string;
   // duration option (already present)
   @IsOptional() @IsString() durationOptionId?: string;
   @IsOptional() @IsString() durationTitle?: string;

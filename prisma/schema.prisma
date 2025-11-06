@@ -148,6 +148,8 @@ model BookingEnquiry {
   durationOption   DurationOption? @relation(fields: [durationOptionId], references: [id])
 
   // UI text fallback & dates
+  destinationTitle String?    // <-- added
+  experienceTitle  String?  
   durationTitle    String?
   startDate        DateTime?
   endDate          DateTime?
