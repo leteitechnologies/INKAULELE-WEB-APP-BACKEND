@@ -8,22 +8,28 @@ export class AdminStatsController {
   /**
    * GET /admin/counts
    * Return aggregated counts used by the admin dashboard.
+   *
+   * Note: counting booking enquiries (BookingEnquiry) rather than bookings.
    */
   @Get('counts')
   async getCounts() {
     try {
-      const [destinations, experiences, bookings, users] = await Promise.all([
-        this.prisma.destination.count(),
-        this.prisma.experience.count(),
-        this.prisma.booking.count(),
-        this.prisma.user.count(),
-      ]);
+
+
+      const [destinations, experiences, bookingEnquiries, users] =
+        await Promise.all([
+          this.prisma.destination.count(),
+          this.prisma.experience.count(),
+          this.prisma.bookingEnquiry.count(),
+          this.prisma.user.count(),
+      
+        ]);
 
       return {
         data: {
           destinations,
           experiences,
-          bookings,
+          bookingEnquiries,
           users,
         },
         meta: {
@@ -31,8 +37,6 @@ export class AdminStatsController {
         },
       };
     } catch (err) {
-      // Useful to log server-side details if you have a logger
-      // console.error('AdminStatsController.getCounts error', err);
       throw new InternalServerErrorException('Failed to compute admin counts');
     }
   }
