@@ -503,4 +503,10 @@ const hostBody = `
 
     return rows;
   }
+  // booking.inquiry.service.ts (inside BookingInquiryService)
+  async deleteBookingEnquiry(id: string) {
+    this.logger.debug('Admin: deleting booking enquiry', { id });
+    return await this.prisma.bookingEnquiry.delete({ where: { id } });
+  }
+
 }

@@ -11,6 +11,7 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Delete,
 } from '@nestjs/common';
 import { BookingInquiryService } from './booking.inquiry.service';
 import { AdminApiKeyGuard } from '../contact/admin.guard'; // adjust path if your guard lives elsewhere
@@ -98,5 +99,13 @@ export class AdminInquiryBookingController {
     return { ok: true };
   }
 
-
+  // DELETE /admin/booking-enquiries/:id
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id') id: string) {
+    const rec = await this.bookingService.getBookingEnquiry(id);
+    if (!rec) throw new NotFoundException('Booking enquiry not found');
+    await this.bookingService.deleteBookingEnquiry(id);
+    return { ok: true };
+  }
 }
