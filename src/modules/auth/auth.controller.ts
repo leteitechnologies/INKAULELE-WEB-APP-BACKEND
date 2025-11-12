@@ -7,11 +7,19 @@ import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
+  private readonly cookieName: string;
+  private readonly cookieDomain?: string;
+
   constructor(
     private auth: AuthService,
     private users: UsersService,
     private cfg: ConfigService
-  ) {}
+  ) {
+    // Initialize cookie-related values here — constructor runs after DI so this.cfg is available
+    this.cookieName = this.cfg.get('COOKIE_NAME') || 'jid';
+    // Optional: set COOKIE_DOMAIN in env to ".inkaulelesidan.com" in production
+    this.cookieDomain = this.cfg.get('COOKIE_DOMAIN') || process.env.COOKIE_DOMAIN;
+  }
 
   @Post('login')
   async login(@Body() body: { email: string; password: string }, @Res() res: Response) {
@@ -20,29 +28,38 @@ export class AuthController {
 
     const token = this.auth.signToken({ id: user.id, email: user.email, role: user.role });
 
-    res.cookie(this.cfg.get('COOKIE_NAME') || 'jid', token, {
+    res.cookie(this.cookieName, token, {
       httpOnly: true,
-     sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none',
-secure: process.env.NODE_ENV === 'production' ? true : false,
+      secure: process.env.NODE_ENV === 'production',
+      // For cross-subdomain usage in production, use 'none' + secure: true.
+      // For local dev use 'lax' so cookies work on http://localhost.
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      domain: process.env.NODE_ENV === 'production' && this.cookieDomain ? this.cookieDomain : undefined,
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-console.log('Generated JWT token:', token);
 
-    // return user safe object
+    console.log('Generated JWT token:', token);
+
     const safe = { id: user.id, email: user.email, name: user.name, role: user.role };
     return res.json({ user: safe });
   }
 
   @Post('logout')
   logout(@Res() res: Response) {
-    res.clearCookie(this.cfg.get('COOKIE_NAME') || 'jid');
+    res.clearCookie(this.cookieName, {
+      path: '/',
+      domain: process.env.NODE_ENV === 'production' && this.cookieDomain ? this.cookieDomain : undefined,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
     return res.json({ ok: true });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
   me(@Req() req: Request) {
-    // validated by JwtStrategy -> req.user
     return { user: req.user };
   }
     @Post('forgot')
