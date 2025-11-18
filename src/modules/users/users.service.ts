@@ -100,21 +100,41 @@ export class UsersService {
     });
   }
 
-async create(data: {
-  email: string;
-  name?: string | null;
-  role?: string | null;
-  passwordHash?: string | null;
-}) {
-  return this.prisma.user.create({
-    data: {
-      email: data.email,
-      name: data.name ?? null,
-      role: (data.role as Role) ?? 'USER',
-      passwordHash: data.passwordHash ?? null, // ✅ null now allowed
-    },
-  });
-}
+ async create(data: {
+    email: string;
+    username?: string;          // <--- allow optional in method input
+    name?: string | null;
+    role?: string | null;
+    passwordHash?: string | null;
+    clerkId?: string | null;
+  }) {
+    // derive username if not provided (strip domain, fallback to email)
+    const username =
+      data.username ??
+      (data.email ? data.email.split('@')[0].replace(/[^a-z0-9._-]/gi, '') : `user_${Date.now()}`);
+
+    const created = await this.prisma.user.create({
+      data: {
+        email: data.email,
+        username,
+        clerkId: data.clerkId ?? null,
+        name: data.name ?? null,
+        role: (data.role as Role) ?? Role.USER,
+        passwordHash: data.passwordHash ?? null,
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return created;
+  }
   findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }

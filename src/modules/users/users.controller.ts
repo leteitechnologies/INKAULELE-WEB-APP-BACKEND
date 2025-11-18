@@ -48,15 +48,16 @@ export class UsersController {
 
   // create user (admin)
   // @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post()
-  async create(@Body() body: { email: string; name?: string; role?: string; password?: string }) {
-    // If you store passwords, hash them in auth service (bcrypt). For now, create without passwordHash.
-    const created = await this.svc.create({
-      email: body.email,
-      name: body.name,
-      role: body.role,
-      passwordHash: null,
-    });
-    return { data: created };
-  }
+@Post()
+async create(@Body() body: { email: string; username?: string; name?: string; role?: string; password?: string; clerkId?: string }) {
+  const created = await this.svc.create({
+    email: body.email,
+    username: body.username,
+    name: body.name,
+    role: body.role,
+    passwordHash: null,
+    clerkId: body.clerkId,
+  });
+  return { data: created };
+}
 }
