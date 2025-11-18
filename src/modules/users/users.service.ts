@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Prisma, Role } from '@prisma/client';
 
@@ -99,7 +99,54 @@ export class UsersService {
       select: { id: true },
     });
   }
+  async ensureSingleAdmin(payload: {
+    clerkId: string;
+    email: string;
+    name?: string | null;
+    username?: string | null;
+  }) {
+    const { clerkId, email, name, username } = payload;
 
+    // See if an admin already exists
+    const existingAdmin = await this.prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+    });
+
+    // If admin exists and matches caller, return it
+    if (existingAdmin) {
+      if (existingAdmin.clerkId === clerkId || existingAdmin.email === email) {
+        return existingAdmin;
+      }
+      // admin exists but different identity → block
+      throw new ConflictException('An admin user already exists');
+    }
+
+    // No admin yet — create one
+    const derivedUsername =
+      username ??
+      (email ? email.split('@')[0].replace(/[^a-z0-9._-]/gi, '').slice(0, 30) : `admin_${Date.now()}`);
+
+    const created = await this.prisma.user.create({
+      data: {
+        clerkId: clerkId,
+        email,
+        username: derivedUsername,
+        name: name ?? null,
+        role: Role.ADMIN,
+      },
+      select: {
+        id: true,
+        clerkId: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    return created;
+  }
  async create(data: {
     email: string;
     username?: string;          // <--- allow optional in method input

@@ -60,4 +60,14 @@ async create(@Body() body: { email: string; username?: string; name?: string; ro
   });
   return { data: created };
 }
+  @Post('ensure-admin')
+  async ensureAdmin(@Body() body: { clerkId: string; email: string; name?: string }) {
+    // This request is protected by JwtAuthGuard; caller must be the configured admin token.
+    const created = await this.svc.ensureSingleAdmin({
+      clerkId: body.clerkId,
+      email: body.email,
+      name: body.name,
+    });
+    return { data: created };
+  }
 }
