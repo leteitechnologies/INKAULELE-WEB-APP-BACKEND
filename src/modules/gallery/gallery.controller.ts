@@ -2,8 +2,8 @@ import { Controller, Get, Query, Post, Body, Put, Param, Delete, Patch, UseGuard
 import { GalleryService } from './gallery.service';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+// import { RolesGuard } from '../auth/roles.guard';
+// import { Roles } from '../auth/roles.decorator';
 import { CreateGalleryDto } from './dto/create-gallery.dto';
 import { UpdateGalleryDto } from './dto/update-gallery.dto';
 import { ReorderDto } from './dto/reorder.dto';
@@ -24,8 +24,8 @@ export class GalleryController {
   }
 
   // admin routes
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN','EDITOR')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN','EDITOR')
 @Get('/admin/gallery')
 adminList(@Query('unattached') unattached?: string) {
   // if ?unattached=true requested, return only unattached images
@@ -33,29 +33,29 @@ adminList(@Query('unattached') unattached?: string) {
   return this.svc.findAll();
 }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN','EDITOR')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN','EDITOR')
   @Post('/admin/gallery')
   create(@Body() dto: CreateGalleryDto) {
     return this.svc.create(dto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN','EDITOR')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN','EDITOR')
   @Put('/admin/gallery/:id')
   update(@Param('id') id: string, @Body() dto: UpdateGalleryDto) {
     return this.svc.update(id, dto);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN','EDITOR')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN','EDITOR')
   @Delete('/admin/gallery/:id')
   remove(@Param('id') id: string) {
     return this.svc.delete(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN','EDITOR')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN','EDITOR')
   @Patch('/admin/gallery/reorder')
   reorder(@Body() dto: ReorderDto) {
     return this.svc.reorder(dto.ids);

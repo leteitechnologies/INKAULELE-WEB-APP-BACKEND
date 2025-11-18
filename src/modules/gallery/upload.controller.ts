@@ -1,8 +1,8 @@
 import { Controller, Post, Body, UseGuards, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { Express } from 'express'; 
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+// import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+ 
+// import { RolesGuard } from '../auth/roles.guard';
+// import { Roles } from '../auth/roles.decorator';
 import * as crypto from 'crypto';
 import { v2 as cloudinary } from 'cloudinary';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -18,8 +18,8 @@ cloudinary.config({
 export class GalleryUploadController {
   // 1) Return a signature + metadata so client can upload directly to Cloudinary
   // Client will POST to https://api.cloudinary.com/v1_1/<cloudName>/auto/upload (or use 'image' endpoint)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'EDITOR')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('ADMIN', 'EDITOR')
   @Post('upload-signature')
   async getUploadSignature(
     @Body() body: { folder?: string; eager?: string; useFilename?: boolean; uniqueFilename?: boolean },
