@@ -20,7 +20,12 @@ export class JwtAuthGuard implements CanActivate {
         throw new UnauthorizedException('Not the configured admin');
       }
       // attach user payload for other guards/controllers
-      req.user = { id: sub, role: (payload as any).role || 'ADMIN' };
+      req.user = {
+        id: sub,
+        role: (payload as any).role || 'ADMIN',
+        username: (payload as any).username ?? undefined,
+        email: (payload as any).email ?? undefined,
+      };
       return true;
     } catch (err) {
       console.warn('Backend token verify failed', (err as Error)?.message ?? err);
