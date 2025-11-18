@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, Patch, Body, Post, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, Patch, Body, Post, Delete, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ListUsersDto } from './dto/list-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -61,13 +61,19 @@ async create(@Body() body: { email: string; username?: string; name?: string; ro
   return { data: created };
 }
   @Post('ensure-admin')
-  async ensureAdmin(@Body() body: { clerkId: string; email: string; name?: string }) {
-    // This request is protected by JwtAuthGuard; caller must be the configured admin token.
-    const created = await this.svc.ensureSingleAdmin({
-      clerkId: body.clerkId,
-      email: body.email,
-      name: body.name,
-    });
-    return { data: created };
+  async ensureAdmin(@Body() body: { clerkId: string; email?: string; name?: string }, @Req() req: any) {
+    console.log('[ensure-admin] incoming body:', body);
+    console.log('[ensure-admin] cookies:', req.cookies);
+    try {
+      const created = await this.svc.ensureSingleAdmin({
+        clerkId: body.clerkId,
+        email: body.email ?? '',
+        name: body.name,
+      });
+      return { data: created };
+    } catch (err) {
+      console.error('[ensure-admin] error', (err as Error).message, err);
+      throw err; // let Nest return appropriate HTTP response
+    }
   }
 }
